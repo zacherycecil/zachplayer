@@ -90,8 +90,8 @@ def refresh_screen(path):
     global mode, start_pos, current_pos, files, root_dir
     mode = Mode.BROWSE
     os.system('cls' if os.name == 'nt' else 'clear')
-    if current_pos-start_pos>row-6 and len(files)-start_pos>10: start_pos+=1
-    if current_pos-6<start_pos and start_pos>0: start_pos-=1
+    if current_pos-start_pos>row-18 and len(files)-start_pos>18: start_pos+=1
+    elif current_pos-6<start_pos and start_pos>0: start_pos-=1
 
     print(f"\n\n\n\n\tCurrent Folder: {pathlib.Path(path).name}\n")
     for i in range(start_pos, min(start_pos+row-10, len(files))):
@@ -109,7 +109,7 @@ def show_history():
             raise EmptyFileError()
         with open("history.txt", "r") as f:
             for line in deque(f, maxlen=10):
-                print("\t" + fit_name_to_screen(line), end="", flush=True)
+                print("\t" + fit_name_to_screen(line), flush=True)
     except (FileNotFoundError, EmptyFileError):
         print("\tNo video history.")
 
@@ -145,9 +145,19 @@ def send_cvlc_stdin(string):
                 return line.replace(">", "").strip()
 
 def navigate(direction, media_files):
-    global current_pos
-    if direction == "up" and current_pos > 0: current_pos-=1
-    elif direction == "down" and current_pos < len(media_files)-1: current_pos+=1
+    global current_pos, start_pos
+    if direction == "up":
+        if current_pos > 0:
+            current_pos-=1
+        else:
+            current_pos = len(media_files)-1
+            start_pos = len(media_files) - 18
+    elif direction == "down":
+        if current_pos < len(media_files)-1:
+            current_pos+=1
+        else:
+            current_pos=0
+            start_pos = 0
 
 def watch_media_change():
     global current_process, mode
