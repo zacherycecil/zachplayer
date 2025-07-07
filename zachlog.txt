@@ -1,9 +1,0 @@
-[00000055b02c2ae0] dbus interface error: Failed to connect to the D-Bus session daemon: Unable to autolaunch a dbus-daemon without a $DISPLAY for X11
-[00000055b02c2ae0] main interface error: no suitable interface module
-[00000055b0186560] main libvlc error: interface "dbus,none" initialization failed
-[00000055b0259190] main interface error: no suitable interface module
-[00000055b0186560] main libvlc error: interface "globalhotkeys,none" initialization failed
-[00000055b0259190] [cli] lua interface: Listening on host "*console".
-VLC media player 3.0.21 Vetinari
-Command Line Interface initialized. Type `help' for help.
-> [00000055b0258380] main audio output error: cannot add user visualization "any" (skipped)

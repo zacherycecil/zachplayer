@@ -1,0 +1,10 @@
+# Vim swap/backup/undo files
+*.swp
+*.swo
+*.swn
+*.un~
+*.bak
+
+# zachplayer log + history
+log.txt
+history.txt
