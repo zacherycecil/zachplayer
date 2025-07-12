@@ -1,0 +1,2 @@
+/dev/input/by-id/usb-Corsair_Corsair_Gaming_SCIMITAR_PRO_RGB_Mouse_1702D025AF7B08095F6DDFD2F5001C07-event-kbd
+/dev/input/by-id/usb-Corsair_Corsair_Gaming_SCIMITAR_PRO_RGB_Mouse_1702D025AF7B08095F6DDFD2F5001C07-event-mouse

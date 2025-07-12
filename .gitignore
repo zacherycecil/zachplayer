@@ -8,3 +8,5 @@
 # zachplayer log + history
 log.txt
 history.txt
+
+__pycache__/
