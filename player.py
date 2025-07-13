@@ -1,14 +1,19 @@
 import subprocess
 import random
 import threading
+import os
+import signal
 
 class Player:
     def __init__(self, app_state):
         self.app_state = app_state
+        self.stop_thread = False
         self.thread = None
-        self.audio_args = ["--intf", "rc", "--play_and_exit", "--avcodec-hw=none"]
+        self.thread_lock = threading.Lock()
+        self.shuffle = False
+        self.audio_args = ["--intf", "rc", "--play-and-exit", "--avcodec-hw=none"]
         self.video_args = [
-            "--freetype-font=\"DejaVu Sans\"",
+            "--freetype-font=DejaVu Sans",
             "--freetype-background-color=0x000000",
             "--freetype-background-opacity=255",
             "--intf", "rc",
@@ -17,7 +22,8 @@ class Player:
         ]
 
     def skip(self):
-        self.send_cvlc_stdin('next')
+        if self.app_state.current_process:
+            self.app_state.current_process.send_signal(signal.SIGINT)
 
     def seek_forward(self):
         self.send_cvlc_stdin("seek +30")
@@ -34,29 +40,42 @@ class Player:
             self.app_state.current_process.stdin.flush()
 
     def kill_player(self):
+        self.stop_thread = True
         if self.app_state.current_process:
             self.app_state.current_process.send_signal(signal.SIGINT)
             self.app_state.current_process.wait()
             self.app_state.current_process = None
 
+        if self.thread and self.thread.is_alive():
+            self.thread.join()
+
+        self.thread = None
+
     def play(self, shuffle=False):
         self.kill_player()
+        self.shuffle = shuffle
         if shuffle:
             random.shuffle(self.app_state.files)
         self.thread = threading.Thread(target=self._play_loop, daemon=True)
         self.thread.start()
 
     def _play_loop(self):
-        while self.app_state.files:
-            next_file = self.app_state.files.pop(0)
-            self._play_one(next_file)
-            self.app_state.files.append(next_file)
+        self.stop_thread = False
+        while self.app_state.files and not self.stop_thread:
+            with self.thread_lock:
+                next_file = self.app_state.files.pop(0)
 
-            self.app_state.current_process.wait()
-            self.app_state.current_process = None
+                if not self.shuffle:
+                    with open("history.txt", "a") as out:
+                        out.write(f"{next_file.name}\n")
+
+                self._play_one(next_file)
+                self.app_state.files.append(next_file)
+
+                self.app_state.current_process.wait()
+                self.app_state.current_process = None
 
     def _play_one(self, path):
-        self.kill_player()
         _, ext = os.path.splitext(path)
         args = ""
 

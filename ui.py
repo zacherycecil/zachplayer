@@ -1,6 +1,9 @@
 import subprocess
 import os
 from mode import Mode
+import pathlib
+from collections import deque
+from logger import logger
 
 class EmptyFileError(Exception):
     pass
@@ -9,9 +12,11 @@ class UI:
     def __init__(self, app_state, controller):
         self.app_state = app_state
         self.controller = controller
-        self.col, self.row = os.get_terminal_size()
-        self.max_items = self.row // 0.75
-        self.scroll_padding = self.row // 0.1
+        col, row = os.get_terminal_size()
+        self.col = int(col)
+        self.row = int(row)
+        self.max_items = int(self.row * 0.65)
+        self.scroll_padding = int(self.row * 0.2)
 
         self.menu = {
             "Cable TV": lambda: self.controller.cable_tv(),
@@ -28,16 +33,16 @@ class UI:
                 self.top_menu()
             case Mode.BROWSE:
                 self.refresh_screen()
-            case Mode.HISTORY():
+            case Mode.HISTORY:
                 self.show_history()
 
     # HELPERS
 
     def fit_name_to_screen(self, name):
-        if len(name) <= col-27:
+        if len(name) <= self.col-27:
             return name
         else:
-            return name[:col-24] + "..."
+            return name[:self.col-24] + "..."
 
     def print_screen(self, lines):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -51,7 +56,7 @@ class UI:
         screen.append("\n" * 4)
         title = subprocess.run(['figlet', '-w', f'{self.col}', '-c', 'zachplayer'], capture_output=True, text=True)
         screen.append(title.stdout)
-        screen.append("\n" * 3)
+        screen.append("\n")
 
         menu_labels = list(self.menu.keys())
         for i, label in enumerate(menu_labels):
@@ -63,16 +68,19 @@ class UI:
 
     def refresh_screen(self):
         state = self.app_state
+        logger.debug(f"UI.draw called with mode={state.mode}, root_dir={state.root_dir}")
+        logger.debug(f"current_pos={state.current_pos}, start_pos={state.start_pos}, len(files)={len(state.files)}")
         screen = []
         screen.append(f"\n\n\n\n\tCurrent Folder: {pathlib.Path(state.root_dir).name}\n")
-        for i in range(state.start_pos, min(state.start_pos + row - 10, len(state.files))):
+
+        for i in range(state.start_pos, min(state.start_pos + self.max_items, len(state.files))):
             file_name = self.fit_name_to_screen(state.files[i].name)
-            if i == current_pos:
+            if i == state.current_pos:
                 screen.append(f"\t\033[1m▶ {file_name}\033[0m")
             else:
                 screen.append(f"\t  {file_name}")
 
-        print_screen(screen)
+        self.print_screen(screen)
 
     def show_history(self):
 
@@ -89,7 +97,7 @@ class UI:
             print("\tNo video history.")
 
         finally:
-            print_screen(screen)
+            self.print_screen(screen)
 
     def music_display(self):
 

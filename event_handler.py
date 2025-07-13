@@ -13,24 +13,24 @@ class EventHandler:
                 self.selector.register(device, EVENT_READ)
 
     def handle_events(self):
-        for key, mask in self.selector.select(timeout=0):
+        for key, mask in self.selector.select():
             device = key.fileobj
             for event in device.read():
                 self.handle_event(event)
 
-    def handle_event(event):
+    def handle_event(self, event):
         if event.type == ecodes.EV_KEY:
             if event.value == 1:  # key down only
                 if event.code in [ecodes.BTN_LEFT]:
-                    left_click()
+                    self.controller.left_click()
                 elif event.code in [ecodes.BTN_RIGHT]:
-                    right_click()
+                    self.controller.right_click()
                 elif event.code in [ecodes.BTN_MIDDLE]:
-                    middle_click()
+                    self.controller.middle_click()
 
-            elif event.type == ecodes.EV_REL:
-                if event.code == ecodes.REL_WHEEL:
-                    if event.value > 0:
-                        scroll_up()
-                    elif event.value < 0:
-                        scroll_down()
+        elif event.type == ecodes.EV_REL:
+            if event.code == ecodes.REL_WHEEL:
+                if event.value > 0:
+                    self.controller.scroll_up()
+                elif event.value < 0:
+                    self.controller.scroll_down()
