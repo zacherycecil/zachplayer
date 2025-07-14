@@ -2,6 +2,8 @@
 
 A minimalist, mouse-only media player built for Raspberry Pi. ZachPlayer is designed for simple, distraction-free playback of music and video files with real-time CLI visuals and flexible control via mouse gestures. No keyboard required.
 
+![ZachPlayer Screenshot](screenshots/screenshot1.png)
+
 ## Features
 
 - ✪ **Audio & Video Playback** using `cvlc`
