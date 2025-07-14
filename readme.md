@@ -6,36 +6,18 @@ A minimalist, mouse-only media player built for Raspberry Pi. ZachPlayer is desi
 
 - ✪ **Audio & Video Playback** using `cvlc`
 - 🔌 **Mouse-Only Control** via `evdev` (clicks + scroll)
-- 📂 **Two Modes**:
+- 📂 **Top Menu + Modes**:
   - **File Picker** – browse and choose media manually
   - **Random Play** – shuffle and loop through your playlist
-- 🎧 **Live CLI Visualization** using `cava`
-- 🧠 **Smart Playback Logic**:
-  - Seamless looping and shuffling
-  - Per-filetype `cvlc` argument handling (e.g. better support for `.opus`)
 - 🎨 **Simple Terminal UI**, custom-drawn using Python (not curses)
-- 💾 **State Tracking** with a centralized `AppState` class
-- ⚗️ Built-in support for future features like YouTube channel playback
 
 ## Getting Started
 
 ### Requirements
 
-- Raspberry Pi (tested on Pi 4)
-- Linux (Raspberry Pi OS or similar)
 - Python 3.9+
 - VLC (`cvlc`)
-- `cava` (for visualization)
 - `evdev` (for input handling)
-- `yt-dlp` (optional, for future YouTube support)
-
-### Install Dependencies
-
-```bash
-sudo apt update
-sudo apt install vlc cava python3-evdev
-pip install yt-dlp
-```
 
 ## Usage
 
@@ -47,11 +29,12 @@ python3 zachplayer.py
 
 Control the player using your mouse:
 
-| Action       | Behavior                       |
-| ------------ | ------------------------------ |
-| Left Click   | Select / play / toggle modes   |
-| Right Click  | Toggle between random & picker |
-| Scroll Wheel | Navigate list or seek          |
+| Action       | Behavior                             |
+| ------------ | ------------------------------------ |
+| Left Click   | Select or play / pause               |
+| Right Click  | Toggle between random & picker       |
+| Scroll Wheel | Navigate list or skip 30sec in media |
+| Middle Click | Return to Top Menu                   |
 
 ## File Structure
 
@@ -61,23 +44,20 @@ Control the player using your mouse:
 ├── controller.py          # Handles playback commands
 ├── state.py               # AppState object to store playback/UI state
 ├── ui.py                  # Terminal UI drawing logic
+├── event_handler.py       # Mouse click reader
+├── player.py              # CVLC player
+├── logger.py              # Python logger to log file
+├── mode.py                # Mode enum
 ├── input_devices.txt      # Device filtering for evdev
 ├── history.txt            # (Optional) Tracks playback history
 ├── log.txt                # Debug log
 ├── youtube_list.txt       # (Planned) YouTube playlist state
-├── /channel_data/         # (Planned) Per-channel video ID caching
 ```
 
 ## Planned Features
 
 - 📺 **YouTube Mode**\
-  Automatically fetch and play the latest videos from a list of subscribed channels using `yt-dlp`. Skips previously watched videos and builds a temp playlist on the fly.
-
-- 🧹 **Swap File Cleaner**\
-  Developer utility to remove Vim `.swp/.swo` files during active development.
-
-- ⌨️ **Fallback Keyboard Controls**\
-  Basic support for keyboards as an alternative control method.
+  Automatically fetch and play the latest videos from a list of subscribed channels using `yt-dlp`.
 
 ## Known Limitations
 
@@ -85,10 +65,6 @@ Control the player using your mouse:
 - Not optimized for high-resolution video.
 - No built-in playlist editor (random mode is automatic).
 - Requires configuration to match your mouse device in `input_devices.txt`.
-
-## License
-
-MIT License — do whatever you want, just don't blame me if it breaks.
 
 ## Author
 
