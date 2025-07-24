@@ -4,17 +4,22 @@ from mode import Mode
 import pathlib
 import os
 from logger import logger
+import youtube as yt
 
 class Controller:
     def __init__(self, app_state, player):
         self.app_state = app_state
         self.ui = UI(app_state, self)
         self.player = player
-        self.play_modes = [Mode.VIDEO, Mode.VIDEOSHUFFLE, Mode.MUSIC, Mode.MUSICSHUFFLE]
+        self.play_modes = [Mode.VIDEO, Mode.VIDEOSHUFFLE, Mode.MUSIC, Mode.MUSICSHUFFLE, Mode.YOUTUBEPLAY]
 
-        self.all_tv = [f for f in pathlib.Path("/nfs/_TV480p").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
-        self.all_songs = [f for f in pathlib.Path("/nfs/_Opus").rglob("*") if f.suffix.lower() in [".opus"]]
-        self.all_movies = [f for f in pathlib.Path("/nfs/_Movies").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
+        try:
+            self.all_tv = [f for f in pathlib.Path("/nfs/_TV480p").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
+            self.all_songs = [f for f in pathlib.Path("/nfs/_Opus").rglob("*") if f.suffix.lower() in [".opus"]]
+            self.all_movies = [f for f in pathlib.Path("/nfs/_Movies").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
+
+        except Exception as e:
+            pass
 
         self.tv_lib = "/nfs/_TV480p"
         self.movie_lib = "/nfs/_Movies"
@@ -49,6 +54,14 @@ class Controller:
         self.app_state.root_dir = self.movie_lib
         self.ui.draw()
 
+    def youtube(self):
+        self.app_state.mode = Mode.YOUTUBE
+        self.app_state.reset_pos()
+        with open("youtube_list.txt") as f:
+            self.app_state.files = [line.strip() for line in f if line.strip()]
+        self.app_state.files.sort(key=lambda s: s.casefold())
+        self.ui.draw()
+
     def radio(self):
         self.ui.show_loading()
         self.app_state.mode = Mode.MUSICSHUFFLE
@@ -76,6 +89,10 @@ class Controller:
             case m if m in self.play_modes:
                 self.player.seek_forward()
 
+            case Mode.YOUTUBE:
+                self.navigate_up()
+                self.ui.draw()
+
     def scroll_down(self):
         mode = self.app_state.mode
 
@@ -91,6 +108,10 @@ class Controller:
             case m if m in self.play_modes:
                 self.player.seek_backward()
 
+            case Mode.YOUTUBE:
+                self.navigate_down()
+                self.ui.draw()
+
     def left_click(self):
         mode = self.app_state.mode
         state = self.app_state
@@ -105,10 +126,12 @@ class Controller:
                     state.reset_pos()
                     state.root_dir = selection
                     state.files = self.get_list(selection)
+                    state.files = [file for file in state.files if file.name.lower() != "cover.jpg"]
                     self.ui.draw()
 
                 elif selection.is_file():
                     state.files = state.files[state.current_pos:] + state.files[:state.current_pos]
+                    state.files = [file.path for file in state.files]
                     self.player.play()
                     ext = self.get_ext(selection)
                     if ext == ".opus":
@@ -125,6 +148,14 @@ class Controller:
                 state.mode = Mode.TOPMENU
                 self.ui.draw()
 
+            case Mode.YOUTUBE:
+                self.ui.show_loading()
+                channel_id = state.files[state.current_pos]
+                logger.debug("selected channel " + channel_id)
+                state.mode = Mode.YOUTUBEPLAY
+                yt.on_channel_selected(channel_id, state)
+                self.player.play()
+
     def right_click(self):
         state = self.app_state
 
@@ -134,7 +165,7 @@ class Controller:
                 state.files = self.get_list(state.root_dir)
                 state.reset_pos()
                 self.ui.draw()
-            case m if m in [Mode.VIDEOSHUFFLE, Mode.MUSICSHUFFLE]:
+            case m if m in [Mode.VIDEOSHUFFLE, Mode.MUSICSHUFFLE, Mode.YOUTUBEPLAY]:
                 self.player.skip()
             case m if m in [Mode.VIDEO, Mode.MUSIC]:
                 self.player.kill_player()
@@ -142,6 +173,10 @@ class Controller:
                 state.mode = Mode.BROWSE
                 self.ui.draw()
             case Mode.HISTORY:
+                state.reset_pos()
+                state.mode = Mode.TOPMENU
+                self.ui.draw()
+            case Mode.YOUTUBE:
                 state.reset_pos()
                 state.mode = Mode.TOPMENU
                 self.ui.draw()

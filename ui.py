@@ -22,8 +22,9 @@ class UI:
             "Cable TV": lambda: self.controller.cable_tv(),
             "Guide": lambda: self.controller.guide(),
             "Jukebox": lambda: self.controller.jukebox(),
-            "DVDs": lambda: self.controller.dvds(),
             "Radio": lambda: self.controller.radio(),
+            "DVDs": lambda: self.controller.dvds(),
+            "YouTube": lambda: self.controller.youtube(),
             "History": lambda: self.controller.history(),
         }
 
@@ -35,6 +36,8 @@ class UI:
                 self.refresh_screen()
             case Mode.HISTORY:
                 self.show_history()
+            case Mode.YOUTUBE:
+                self.show_youtube()
 
     # HELPERS
 
@@ -55,8 +58,7 @@ class UI:
         screen = []
         screen.append("\n" * 4)
         title = subprocess.run(['figlet', '-w', f'{self.col}', '-c', 'zachplayer'], capture_output=True, text=True)
-        screen.append(title.stdout)
-        screen.append("\n")
+        screen.append(f"{title.stdout}\n")
 
         menu_labels = list(self.menu.keys())
         for i, label in enumerate(menu_labels):
@@ -113,6 +115,22 @@ class UI:
         screen.append(art.stdout)
         self.print_screen(screen)
 
+    def show_youtube(self):
+        state = self.app_state
+        screen = []
+        screen.append(f"\n\n\n\n\tYouTube Channels:\n")
+
+        state.files.sort()
+
+        for i in range(state.start_pos, min(state.start_pos + self.max_items, len(state.files))):
+            file_name = self.fit_name_to_screen(state.files[i])
+            file_name = file_name.lstrip("@")
+            if i == state.current_pos:
+                screen.append(f"\t\033[1m▶ {file_name}\033[0m")
+            else:
+                screen.append(f"\t  {file_name}")
+
+        self.print_screen(screen)
 
     def show_loading(self):
         screen = []

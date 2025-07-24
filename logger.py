@@ -17,5 +17,6 @@ def log_uncaught_exceptions(exctype, value, tb, state=None):
             logger.debug(f"state.current_pos = {state.current_pos}")
             logger.debug(f"state.start_pos = {state.start_pos}")
             logger.debug(f"len(state.files) = {len(state.files)}")
+            logger.debug(f"state.mode = {state.mode}")
         except Exception as e:
             logger.warning(f"Could not log full state: {e}")

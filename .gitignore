@@ -10,3 +10,6 @@ log.txt
 history.txt
 
 __pycache__/
+
+channel_data/
+
