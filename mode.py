@@ -8,4 +8,5 @@ class Mode(Enum):
     MUSIC = 5
     MUSICSHUFFLE = 6
     HISTORY = 7
-
+    YOUTUBE = 8
+    YOUTUBEPLAY = 9
