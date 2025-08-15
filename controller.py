@@ -5,53 +5,28 @@ import pathlib
 import os
 from logger import logger
 import youtube as yt
+import toml
 
 class Controller:
     def __init__(self, app_state, player):
         self.app_state = app_state
         self.ui = UI(app_state, self)
         self.player = player
-        self.play_modes = [Mode.VIDEO, Mode.VIDEOSHUFFLE, Mode.MUSIC, Mode.MUSICSHUFFLE, Mode.YOUTUBEPLAY]
-
-        try:
-            self.all_tv = [f for f in pathlib.Path("/nfs/_TV480p").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
-            self.all_songs = [f for f in pathlib.Path("/nfs/_Opus").rglob("*") if f.suffix.lower() in [".opus"]]
-            self.all_movies = [f for f in pathlib.Path("/nfs/_Movies").rglob("*") if f.suffix.lower() in [".mp4", ".avi", ".mkv"]]
-
-        except Exception as e:
-            pass
-
-        self.tv_lib = "/nfs/_TV480p"
-        self.movie_lib = "/nfs/_Movies"
-        self.music_lib = "/nfs/_Opus"
 
     # MENU FUNCTIONS
 
-    def cable_tv(self):
+    def random(self, path, extensions):
         self.ui.show_loading()
-        self.app_state.mode = Mode.VIDEOSHUFFLE
-        self.app_state.files = self.all_tv
+        self.app_state.mode = Mode.RANDOM
+        media = self.update_lib(path, extensions)
+        self.app_state.files = media
         self.player.play(shuffle=True)
 
-    def guide(self):
+    def selection(self, path):
         self.app_state.mode = Mode.BROWSE
         self.app_state.reset_pos()
-        self.app_state.files = self.get_list(self.tv_lib)
-        self.app_state.root_dir = self.tv_lib
-        self.ui.draw()
-
-    def jukebox(self):
-        self.app_state.mode = Mode.BROWSE
-        self.app_state.reset_pos()
-        self.app_state.files = self.get_list(self.music_lib)
-        self.app_state.root_dir = self.music_lib
-        self.ui.draw()
-
-    def dvds(self):
-        self.app_state.mode = Mode.BROWSE
-        self.app_state.reset_pos()
-        self.app_state.files = self.get_list(self.movie_lib)
-        self.app_state.root_dir = self.movie_lib
+        self.app_state.files = self.get_list(path)
+        self.app_state.root_dir = path
         self.ui.draw()
 
     def youtube(self):
@@ -61,12 +36,6 @@ class Controller:
             self.app_state.files = [line.strip() for line in f if line.strip()]
         self.app_state.files.sort(key=lambda s: s.casefold())
         self.ui.draw()
-
-    def radio(self):
-        self.ui.show_loading()
-        self.app_state.mode = Mode.MUSICSHUFFLE
-        self.app_state.files = self.all_songs
-        self.player.play(shuffle=True)
 
     def history(self):
         self.app_state.mode = Mode.HISTORY
@@ -86,7 +55,7 @@ class Controller:
                 self.navigate_up()
                 self.ui.draw()
 
-            case m if m in self.play_modes:
+            case m if m in [Mode.PLAYING, Mode.RANDOM, Mode.YOUTUBEPLAY]:
                 self.player.seek_forward()
 
             case Mode.YOUTUBE:
@@ -105,7 +74,7 @@ class Controller:
                 self.navigate_down()
                 self.ui.draw()
 
-            case m if m in self.play_modes:
+            case m if m in [Mode.PLAYING, Mode.RANDOM, Mode.YOUTUBEPLAY]:
                 self.player.seek_backward()
 
             case Mode.YOUTUBE:
@@ -130,31 +99,28 @@ class Controller:
                     self.ui.draw()
 
                 elif selection.is_file():
+                    self.app_state.mode = Mode.PLAYING
                     state.files = state.files[state.current_pos:] + state.files[:state.current_pos]
                     state.files = [file.path for file in state.files]
                     self.player.play()
-                    ext = self.get_ext(selection)
-                    if ext == ".opus":
-                        self.ui.show_loading()
-                        state.mode = Mode.MUSIC
-                    elif ext in [".mkv", ".mp4", ".avi"]:
-                        self.ui.show_loading()
-                        state.mode = Mode.VIDEO
+                    self.ui.show_loading()
 
-            case m if m in self.play_modes:
+            case m if m in [Mode.PLAYING, Mode.YOUTUBEPLAY, Mode.RANDOM]:
                 self.player.toggle_pause()
 
             case Mode.HISTORY:
-                state.mode = Mode.TOPMENU
+                mode = Mode.TOPMENU
                 self.ui.draw()
 
             case Mode.YOUTUBE:
+                self.app_state.mode = Mode.YOUTUBEPLAY
                 self.ui.show_loading()
                 channel_id = state.files[state.current_pos]
                 logger.debug("selected channel " + channel_id)
-                state.mode = Mode.YOUTUBEPLAY
+                self.ui.show_loading_msg("Fetching newest video IDs...")
                 yt.on_channel_selected(channel_id, state)
-                self.player.play()
+                self.ui.show_loading()
+                self.player.play(yt_id=channel_id)
 
     def right_click(self):
         state = self.app_state
@@ -165,9 +131,9 @@ class Controller:
                 state.files = self.get_list(state.root_dir)
                 state.reset_pos()
                 self.ui.draw()
-            case m if m in [Mode.VIDEOSHUFFLE, Mode.MUSICSHUFFLE, Mode.YOUTUBEPLAY]:
+            case m if m in [Mode.RANDOM, Mode.YOUTUBEPLAY]:
                 self.player.skip()
-            case m if m in [Mode.VIDEO, Mode.MUSIC]:
+            case Mode.PLAYING:
                 self.player.kill_player()
                 state.files = sorted(state.files, key=lambda f: f.name)
                 state.mode = Mode.BROWSE
@@ -188,6 +154,9 @@ class Controller:
         self.ui.draw()
 
     # HELPERS
+
+    def update_lib(self, path, ext):
+        return [f for f in pathlib.Path(path).rglob("*") if f.suffix.lower() in ext]
 
     def get_ext(self, path):
         _, ext = os.path.splitext(path)
