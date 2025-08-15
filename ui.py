@@ -4,6 +4,7 @@ from mode import Mode
 import pathlib
 from collections import deque
 from logger import logger
+import toml
 
 class EmptyFileError(Exception):
     pass
@@ -18,12 +19,7 @@ class UI:
         self.max_items = int(self.row * 0.65)
         self.scroll_padding = int(self.row * 0.2)
 
-        self.menu = {
-            "Cable TV": lambda: self.controller.cable_tv(),
-            "Guide": lambda: self.controller.guide(),
-            "Jukebox": lambda: self.controller.jukebox(),
-            "Radio": lambda: self.controller.radio(),
-            "DVDs": lambda: self.controller.dvds(),
+        self.menu = self.get_toml_libs() | {
             "YouTube": lambda: self.controller.youtube(),
             "History": lambda: self.controller.history(),
         }
@@ -40,6 +36,17 @@ class UI:
                 self.show_youtube()
 
     # HELPERS
+
+    def get_toml_libs(self):
+        libraries = toml.load("media_libraries.toml")["library"]
+        lib_dict = {}
+        for lib in libraries:
+            if lib["random"]:
+                lib_dict[lib["label"]] = lambda lib=lib: self.controller.random(lib["path"], lib["extensions"])
+            else:
+                lib_dict[lib["label"]] = lambda lib=lib: self.controller.selection(lib["path"])
+
+        return lib_dict
 
     def fit_name_to_screen(self, name):
         if len(name) <= self.col-27:
@@ -136,4 +143,11 @@ class UI:
         screen = []
         screen.append("\n"*(self.row//2))
         screen.append("Loading...".center(self.col))
+        self.print_screen(screen)
+
+    def show_loading_msg(self, msg):
+        screen = []
+        screen.append("\n"*(self.row//2))
+        screen.append("Loading...".center(self.col))
+        screen.append("\n" + msg.center(self.col))
         self.print_screen(screen)

@@ -9,6 +9,7 @@ class AppState:
         self.start_pos = 0
         self.files = []
         self.root_dir = ""
+        self.extensions = []
 
     def reset_pos(self):
         self.current_pos = 0
