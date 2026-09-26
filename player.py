@@ -117,10 +117,12 @@ class Player:
                     self.app_state.current_process = subprocess.Popen([
                         "mpv",
                         media,
+                        "--audio-channels=stereo",
                         f"--input-ipc-server={self.socket_path}",
                         "--ytdl-format=best[height=360]",
+                        "--vf=scale=-2:480",
                         "--idle=no",
-                        "--hwdec=no",
+                        "--hwdec=mmal",
                         "--quiet"],
                         stdout=out,
                         stderr=out
@@ -163,10 +165,17 @@ class Player:
                     stdout=out,
                     stderr=out
                 )
+                logger.debug("before loop")
+                while(True):
+                    line = self.app_state.current_process.stdout.strip()
+                    if self.app_state.current_process.stdout:
+                        downloaded_file = self.app_state.current_process.stdout.strip()
+                        break
+                logger.debug("after loop")
 
                 self.app_state.current_process.wait()
-
                 downloaded_file = None
+
                 for f in os.listdir(f"channel_data/{yt_id}/videos/"):
                     if video in f:
                         downloaded_file = os.path.join(f"channel_data/{yt_id}/videos/", f)

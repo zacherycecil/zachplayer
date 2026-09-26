@@ -1,0 +1,34 @@
+[[library]] 
+path = "/nfs/stinkpad/media/opus" 
+label = "Radio"
+random = true
+extensions = [".opus"]
+track_history = false
+
+[[library]]
+path = "/nfs/stinkpad/media/opus" 
+label = "Jukebox"
+random = false
+extensions = [".opus"]
+track_history = false
+
+[[library]]
+path = "/nfs/stinkpad/media/tv" 
+label = "Cable"
+random = true
+extensions = [".mkv", ".avi", ".mp4"]
+track_history = false
+
+[[library]]
+path = "/nfs/stinkpad/media/tv" 
+label = "Guide"
+random = false
+extensions = [".mkv", ".avi", ".mp4"]
+track_history = true
+
+[[library]]
+path = "/nfs/stinkpad/media/movies" 
+label = "Movies"
+random = false
+extensions = [".mkv", ".avi", ".mp4"]
+track_history = false

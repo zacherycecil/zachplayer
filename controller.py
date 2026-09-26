@@ -163,7 +163,9 @@ class Controller:
         return ext.lower()
 
     def get_list(self, path):
-        return [entry for entry in os.scandir(path)]
+        entries = [entry for entry in os.scandir(path)]
+        entries.sort(key=lambda p: p.name)
+        return entries
 
     def navigate_up(self):
         state = self.app_state
